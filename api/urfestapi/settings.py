@@ -25,7 +25,7 @@ SECRET_KEY = 'django-insecure--*9f!=t-ft3+kk&lk&2#2n_#w1jo&(m(o=7+7s66r^-csh(p)t
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['*']
 
 
 # Application definition
@@ -37,6 +37,12 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+
+    'django_extensions',
+    'rest_framework',
+    'corsheaders',
+
+    'app'
 ]
 
 MIDDLEWARE = [
@@ -47,7 +53,13 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
+    'corsheaders.middleware.CorsMiddleware',
 ]
+
+CORS_ORIGIN_ALLOW_ALL = True
+
+# enable CORS for preflight operations
+CORS_ALLOW_HEADERS = ('Authorization', 'Content-Type', 'Cache-Control', 'X-Requested-With')
 
 ROOT_URLCONF = 'urfestapi.urls'
 
