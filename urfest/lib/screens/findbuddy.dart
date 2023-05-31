@@ -57,7 +57,7 @@ class _MapState extends State<FindBuddyPage> {
           );
         });
 
-    _retrieveLocationAPI("user/2/buddies/3")
+    _retrieveLocationAPI("user/3/buddies/3")
       .then((location) {
         _buddyLocation = location;
         _buddy = Marker(
@@ -118,82 +118,83 @@ class _MapState extends State<FindBuddyPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Stack(
+      body: Column(
         children: [
-          GoogleMap(
-            zoomControlsEnabled: false,
-            initialCameraPosition: _initialCameraPosition,
-            onMapCreated: (controller) => _googleMapController = controller,
-            markers: {
-              _home,
-              _festival,
-              _buddy,
-            },
+          Expanded(
+            child: GoogleMap(
+              zoomControlsEnabled: false,
+              initialCameraPosition: _initialCameraPosition,
+              onMapCreated: (controller) => _googleMapController = controller,
+              markers: {
+                _home,
+                _festival,
+                _buddy,
+              },
+            ),
           ),
-          Positioned(
-            bottom: 0,
-            left: 0,
-            right: 0,
+          Container(
+            color: Colors.white,
+            padding: EdgeInsets.symmetric(horizontal: 16),
+            child: TextField(
+              decoration: InputDecoration(
+                hintText: 'Search for a buddy',
+                border: InputBorder.none,
+              ),
+              onChanged: (value) {
+                // show a list of buddies to choose from, based on what is being written
+              },
+            ),
+          ),
+          Container(
+            color: Colors.white,
+            padding: EdgeInsets.symmetric(vertical: 16),
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                Expanded( // Add Expanded widget here
-                  child: Container(
-                    color: Colors.white, // Set the background color to white
-                    child: IconButton(
-                      icon: Icon(Icons.location_on),
-                      onPressed: () {
-                        // animate to festival's location
-                        if (_festivalLocation != null) {
-                          _googleMapController?.animateCamera(
-                            CameraUpdate.newCameraPosition(CameraPosition(
-                              target: _festivalLocation,
-                              zoom: 11.5,
-                            )),
-                          );
-                        }
-                      },
-                    ),
-                  ),
+                IconButton(
+                  icon: Icon(Icons.location_on),
+                  onPressed: () {
+                    // animate to festival's location
+                    if (_festivalLocation != null) {
+                      _googleMapController?.animateCamera(
+                        CameraUpdate.newCameraPosition(CameraPosition(
+                          target: _festivalLocation,
+                          zoom: 11.5,
+                        )),
+                      );
+                    }
+                  },
                 ),
-                Expanded( // Add Expanded widget here
-                  child: Container(
-                    color: Colors.white, // Set the background color to white
-                    child: IconButton(
-                      icon: Icon(Icons.group),
-                      onPressed: () {
-                        // fetch buddy location from database
-                        if (_buddyLocation != null) {
-                          _googleMapController?.animateCamera(
-                            CameraUpdate.newCameraPosition(CameraPosition(
-                              target: _buddyLocation,
-                              zoom: 11.5,
-                            )),
-                          );
-                        }
-                      },
-                    ),
-                  ),
+                IconButton(
+                  icon: Icon(Icons.group),
+                  onPressed: () {
+                    // fetch buddy location from database
+                    if (_buddyLocation != null) {
+                      _googleMapController?.animateCamera(
+                        CameraUpdate.newCameraPosition(CameraPosition(
+                          target: _buddyLocation,
+                          zoom: 11.5,
+                        )),
+                      );
+                    }
+                  },
                 ),
-                Expanded( // Add Expanded widget here
-                  child: Container(
-                    color: Colors.white, // Set the background color to white
-                    child: IconButton(
-                      icon: Icon(Icons.person_pin_circle),
-                      onPressed: () {
-                        // animate to user's location
-                        if (_locationData != null) {
-                          _googleMapController?.animateCamera(
-                            CameraUpdate.newCameraPosition(CameraPosition(
-                              target: LatLng(_locationData!.latitude!,
-                                  _locationData!.longitude!),
-                              zoom: 11.5,
-                            )),
-                          );
-                        }
-                      },
-                    ),
-                  ),
+                IconButton(
+                  icon: Icon(Icons.person_pin_circle),
+                  onPressed: () {
+                    // animate to user's location
+                    if (_locationData != null) {
+                      _googleMapController?.animateCamera(
+                        CameraUpdate.newCameraPosition(CameraPosition(
+                          target: LatLng(
+                              _locationData!.latitude!,
+                              _locationData!.longitude!
+                          ),
+                          zoom: 11.5,
+                        )),
+                      );
+                    }
+                  },
                 ),
               ],
             ),
