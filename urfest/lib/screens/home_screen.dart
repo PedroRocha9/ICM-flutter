@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:urfest/screens/findbuddy.dart';
+import 'package:urfest/screens/lineup.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -18,7 +19,7 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   final List<Widget> _pages = [
-    //LineUpPage(),
+    LineUpPage(),
     FindBuddyPage(),
     //QRCodePage(),
   ];
