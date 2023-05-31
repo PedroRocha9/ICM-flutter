@@ -17,7 +17,7 @@ class FindBuddyPage extends StatefulWidget {
 class _MapState extends State<FindBuddyPage> {
   GoogleMapController? _googleMapController;
   LocationData? _locationData;
-  
+
   Marker _home = const Marker(markerId: MarkerId('home'));
   Marker _festival = const Marker(markerId: MarkerId('festival'));
   Marker _buddy = const Marker(markerId: MarkerId('buddy'));
@@ -26,7 +26,9 @@ class _MapState extends State<FindBuddyPage> {
   LatLng _buddyLocation = const LatLng(0, 0);
 
   CameraPosition _initialCameraPosition =
-    const CameraPosition(target: LatLng(0, 0));
+      const CameraPosition(target: LatLng(0, 0));
+
+  List<String> _buddies = [];
 
   @override
   void initState() {
@@ -45,29 +47,34 @@ class _MapState extends State<FindBuddyPage> {
       );
     });
 
-    _retrieveLocationAPI("festival/1")
-        .then((location) {
-          _festivalLocation = location;
-          _festival = Marker(
-            markerId: const MarkerId('festival'),
-            position: location,
-            infoWindow: const InfoWindow(title: 'Festival'),
-            icon: BitmapDescriptor.defaultMarkerWithHue(
-                BitmapDescriptor.hueGreen),
-          );
-        });
+    _retrieveLocationAPI("festival/1").then((location) {
+      _festivalLocation = location;
+      _festival = Marker(
+        markerId: const MarkerId('festival'),
+        position: location,
+        infoWindow: const InfoWindow(title: 'Festival'),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+      );
+    });
 
-    _retrieveLocationAPI("user/3/buddies/3")
-      .then((location) {
-        _buddyLocation = location;
-        _buddy = Marker(
-          markerId: const MarkerId('buddy'),
-          position: location,
-          infoWindow: const InfoWindow(title: 'Buddy'),
-          icon: BitmapDescriptor.defaultMarkerWithHue(
-              BitmapDescriptor.hueBlue),
-        );
-      });
+    _retrieveLocationAPI("user/3/buddies/1").then((location) {
+      _buddyLocation = location;
+      _buddy = Marker(
+        markerId: const MarkerId('buddy'),
+        position: location,
+        infoWindow: const InfoWindow(title: 'Buddy'),
+        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+      );
+    });
+
+    _retrieveBuddies().then((buddies) {
+      _buddies = buddies;
+
+      print("Buddies: ");
+      print(_buddies);
+      print(_buddies.where((item) => item.contains("us")).toList());
+      print(_buddies.where((item) => item.contains("bi")).toList());
+    });
   }
 
   Future<LocationData?> _retrieveLocation() async {
@@ -101,7 +108,7 @@ class _MapState extends State<FindBuddyPage> {
 
   Future<LatLng> _retrieveLocationAPI(String endpoint) async {
     final response =
-        await http.get(Uri.parse('http://192.168.43.168:8000/$endpoint'));
+        await http.get(Uri.parse('http://192.168.154.228:8000/$endpoint'));
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
       Map<String, dynamic> json = jsonDecode(response.body);
@@ -112,6 +119,20 @@ class _MapState extends State<FindBuddyPage> {
       // If the server did not return a 200 OK response,
       // then throw an exception.
       throw Exception('Failed to load festival location');
+    }
+  }
+
+  Future<List<String>> _retrieveBuddies() async {
+    final response = await http.get(Uri.parse(
+        'http://192.168.154.228:8000/user/2/buddies?content=username'));
+
+    if (response.statusCode == 200) {
+      List<dynamic> data = jsonDecode(response.body);
+      print("Data: ");
+      print(jsonDecode(response.body));
+      return data.map((dynamic buddy) => buddy.toString()).toList();
+    } else {
+      throw Exception('Failed to load buddies');
     }
   }
 
@@ -186,10 +207,8 @@ class _MapState extends State<FindBuddyPage> {
                     if (_locationData != null) {
                       _googleMapController?.animateCamera(
                         CameraUpdate.newCameraPosition(CameraPosition(
-                          target: LatLng(
-                              _locationData!.latitude!,
-                              _locationData!.longitude!
-                          ),
+                          target: LatLng(_locationData!.latitude!,
+                              _locationData!.longitude!),
                           zoom: 11.5,
                         )),
                       );

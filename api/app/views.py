@@ -242,7 +242,10 @@ def user_buddy(request, id, buddy_id=None):
 
                 buddies = model_to_dict(User.objects.get(id=buddy_id))
             else:
-                buddies = [model_to_dict(buddy)["buddy"] for buddy in UserBuddy.objects.filter(user=id)]
+                if request.GET.get("content") == "username":
+                    buddies = [model_to_dict(buddy.buddy)["username"] for buddy in UserBuddy.objects.filter(user=id)]
+                else:
+                    buddies = [model_to_dict(buddy)["buddy"] for buddy in UserBuddy.objects.filter(user=id)]
 
             return Response(buddies, status=status.HTTP_200_OK)
         except UserBuddy.DoesNotExist:
