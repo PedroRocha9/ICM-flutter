@@ -17,11 +17,16 @@ class FindBuddyPage extends StatefulWidget {
 class _MapState extends State<FindBuddyPage> {
   GoogleMapController? _googleMapController;
   LocationData? _locationData;
+  
   Marker _home = const Marker(markerId: MarkerId('home'));
-  CameraPosition _initialCameraPosition =
-      const CameraPosition(target: LatLng(0, 0));
+  Marker _festival = const Marker(markerId: MarkerId('festival'));
+  Marker _buddy = const Marker(markerId: MarkerId('buddy'));
 
   LatLng _festivalLocation = const LatLng(0, 0);
+  LatLng _buddyLocation = const LatLng(0, 0);
+
+  CameraPosition _initialCameraPosition =
+    const CameraPosition(target: LatLng(0, 0));
 
   @override
   void initState() {
@@ -40,8 +45,29 @@ class _MapState extends State<FindBuddyPage> {
       );
     });
 
-    _retrieveFestivalLocation()
-        .then((location) => _festivalLocation = location);
+    _retrieveLocationAPI("festival/1")
+        .then((location) {
+          _festivalLocation = location;
+          _festival = Marker(
+            markerId: const MarkerId('festival'),
+            position: location,
+            infoWindow: const InfoWindow(title: 'Festival'),
+            icon: BitmapDescriptor.defaultMarkerWithHue(
+                BitmapDescriptor.hueGreen),
+          );
+        });
+
+    _retrieveLocationAPI("user/2/buddies/3")
+      .then((location) {
+        _buddyLocation = location;
+        _buddy = Marker(
+          markerId: const MarkerId('buddy'),
+          position: location,
+          infoWindow: const InfoWindow(title: 'Buddy'),
+          icon: BitmapDescriptor.defaultMarkerWithHue(
+              BitmapDescriptor.hueBlue),
+        );
+      });
   }
 
   Future<LocationData?> _retrieveLocation() async {
@@ -73,20 +99,14 @@ class _MapState extends State<FindBuddyPage> {
     return _locationData;
   }
 
-  Future<LatLng> _retrieveFestivalLocation() async {
-    print("SIUUUUU11111111");
+  Future<LatLng> _retrieveLocationAPI(String endpoint) async {
     final response =
-        await http.get(Uri.parse('http://192.168.154.228:8000/festival/1'));
-    print("SIUUUUUUU1.51.51.51.5");
+        await http.get(Uri.parse('http://192.168.43.168:8000/$endpoint'));
     if (response.statusCode == 200) {
-      print("SIUUUUU2222222");
       // If the server returns a 200 OK response, then parse the JSON.
       Map<String, dynamic> json = jsonDecode(response.body);
       double lat = json['lat'];
       double lng = json['lon'];
-      print("SIUUUUU");
-      print(lat);
-      print(lng);
       return LatLng(lat, lng);
     } else {
       // If the server did not return a 200 OK response,
@@ -106,49 +126,74 @@ class _MapState extends State<FindBuddyPage> {
             onMapCreated: (controller) => _googleMapController = controller,
             markers: {
               _home,
+              _festival,
+              _buddy,
             },
           ),
           Positioned(
-            bottom: 50.0,
+            bottom: 0,
             left: 0,
             right: 0,
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
-                IconButton(
-                  icon: Icon(Icons.location_on),
-                  onPressed: () {
-                    // animate to festival's location
-                    if (_festivalLocation != null) {
-                      _googleMapController?.animateCamera(
-                        CameraUpdate.newCameraPosition(CameraPosition(
-                          target: _festivalLocation,
-                          zoom: 11.5,
-                        )),
-                      );
-                    }
-                  },
+                Expanded( // Add Expanded widget here
+                  child: Container(
+                    color: Colors.white, // Set the background color to white
+                    child: IconButton(
+                      icon: Icon(Icons.location_on),
+                      onPressed: () {
+                        // animate to festival's location
+                        if (_festivalLocation != null) {
+                          _googleMapController?.animateCamera(
+                            CameraUpdate.newCameraPosition(CameraPosition(
+                              target: _festivalLocation,
+                              zoom: 11.5,
+                            )),
+                          );
+                        }
+                      },
+                    ),
+                  ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.group),
-                  onPressed: () {
-                    // fetch buddy location from database
-                  },
+                Expanded( // Add Expanded widget here
+                  child: Container(
+                    color: Colors.white, // Set the background color to white
+                    child: IconButton(
+                      icon: Icon(Icons.group),
+                      onPressed: () {
+                        // fetch buddy location from database
+                        if (_buddyLocation != null) {
+                          _googleMapController?.animateCamera(
+                            CameraUpdate.newCameraPosition(CameraPosition(
+                              target: _buddyLocation,
+                              zoom: 11.5,
+                            )),
+                          );
+                        }
+                      },
+                    ),
+                  ),
                 ),
-                IconButton(
-                  icon: Icon(Icons.person_pin_circle),
-                  onPressed: () {
-                    // animate to user's location
-                    if (_locationData != null) {
-                      _googleMapController?.animateCamera(
-                        CameraUpdate.newCameraPosition(CameraPosition(
-                          target: LatLng(_locationData!.latitude!,
-                              _locationData!.longitude!),
-                          zoom: 11.5,
-                        )),
-                      );
-                    }
-                  },
+                Expanded( // Add Expanded widget here
+                  child: Container(
+                    color: Colors.white, // Set the background color to white
+                    child: IconButton(
+                      icon: Icon(Icons.person_pin_circle),
+                      onPressed: () {
+                        // animate to user's location
+                        if (_locationData != null) {
+                          _googleMapController?.animateCamera(
+                            CameraUpdate.newCameraPosition(CameraPosition(
+                              target: LatLng(_locationData!.latitude!,
+                                  _locationData!.longitude!),
+                              zoom: 11.5,
+                            )),
+                          );
+                        }
+                      },
+                    ),
+                  ),
                 ),
               ],
             ),
