@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:urfest/screens/findbuddy.dart';
 import 'package:urfest/screens/lineup.dart';
+import 'package:urfest/screens/profile.dart';
+import 'package:urfest/screens/qrcode.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({Key? key}) : super(key: key);
@@ -21,7 +23,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final List<Widget> _pages = [
     LineUpPage(),
     FindBuddyPage(),
-    //QRCodePage(),
+    ProfilePage(),
+    QRCodePage(),
   ];
 
   @override
@@ -34,12 +37,9 @@ class _HomeScreenState extends State<HomeScreen> {
         type: BottomNavigationBarType
             .fixed, // to show all the items in the bottom bar
         items: const [
-          BottomNavigationBarItem(
-              icon: Icon(Icons.library_music_outlined), label: 'Line Up'),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.location_on_outlined),
-            label: 'Find Buddy',
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.library_music_outlined), label: 'Line Up'),
+          BottomNavigationBarItem(icon: Icon(Icons.location_on_outlined), label: 'Find Buddy'),
+          BottomNavigationBarItem(icon: Icon(Icons.person), label: 'Profile'),
           BottomNavigationBarItem(icon: Icon(Icons.qr_code), label: 'QR Code'),
         ],
       ),

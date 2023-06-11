@@ -1,3 +1,4 @@
+
 import 'package:flutter/material.dart';
 
 class LineUpPage extends StatefulWidget {
@@ -43,3 +44,49 @@ class _LineUpPageState extends State<LineUpPage> {
     );
   }
 }
+/*
+
+import 'dart:typed_data';
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+
+class LineUpPage extends StatefulWidget {
+  const LineUpPage({super.key});
+
+  @override
+  _LineUpPageState createState() => _LineUpPageState();
+}
+
+class _LineUpPageState extends State<LineUpPage> {
+  Uint8List? qrCodeImageData;
+
+  Future<void> fetchQRCode() async {
+    final response = await http.get(Uri.parse('http://192.168.43.168:8000/qrcode/3'));
+    if (response.statusCode == 200) {
+      setState(() {
+        qrCodeImageData = response.bodyBytes;
+      });
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    fetchQRCode();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(
+        title: Text('QR Code'),
+      ),
+      body: Center(
+        child: qrCodeImageData != null
+            ? Image.memory(qrCodeImageData!)
+            : CircularProgressIndicator(),
+      ),
+    );
+  }
+}
+*/

@@ -1,13 +1,21 @@
+from django.http import HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 
-from django.forms.models import model_to_dict
+from qrcode.image.styledpil import StyledPilImage
+from qrcode.image.styles.colormasks import *
 
+from django.forms.models import model_to_dict
 from app.models import User, Festival, UserFestival, FestivalLineup, UserBuddy
 
+from urfestapi.settings import BASE_DIR
+
 import json
+import qrcode
+import random
+import os
 
 @api_view(["GET", "POST", "PATCH", "DELETE"]) 
 @csrf_exempt
@@ -291,4 +299,48 @@ def user_buddy(request, id, buddy_id=None):
         user_buddy.delete()
 
         return Response({"message": "UserBuddy deleted"}, status=status.HTTP_200_OK)
-        
+
+@api_view(["POST", "GET", "DELETE"])
+@csrf_exempt
+def qrcodes(request, id=None):
+    if id is not None:
+        try:
+            user = User.objects.get(id=id)
+            qr_name = f'qrcodes/user_{id}.png'
+
+            # generate qrcode
+            if request.method == "POST":
+                path = f'{BASE_DIR}/static/{qr_name}'
+
+                _generate_qrcode(path, json.dumps(model_to_dict(user)))
+                return Response({"message": f"QR code generated for {user.id}"}, status=status.HTTP_201_CREATED)
+
+            # get qrcode path
+            if request.method == "GET":
+                try:
+                    with open(f"{BASE_DIR}/static/{qr_name}", "rb") as f:
+                        return HttpResponse(f.read(), content_type="image/png")
+                except IOError:
+                    return Response({"message": "QR code not found"}, status=status.HTTP_404_NOT_FOUND)
+
+            if request.method == "DELETE":
+                os.remove(f'{BASE_DIR}/static/qrcodes/user_{user.id}.png')
+                return Response({"message": f"QR code deleted for {user.id}"}, status=status.HTTP_200_OK)
+                
+        except User.DoesNotExist as e:
+            return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
+    else:
+        return Response({"message": "User ID required"}, status=status.HTTP_400_BAD_REQUEST)
+
+def _generate_qrcode(path, data):
+    l = [RadialGradiantColorMask(), SquareGradiantColorMask(), HorizontalGradiantColorMask(), VerticalGradiantColorMask()]
+    
+    qr = qrcode.QRCode(
+        version=1,
+        error_correction=qrcode.constants.ERROR_CORRECT_L,
+        border=2
+    )
+    qr.add_data(data)
+
+    img = qr.make_image(image_factory=StyledPilImage, color_mask=l[random.randint(0,3)])
+    img.save(path)

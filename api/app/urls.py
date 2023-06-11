@@ -15,4 +15,6 @@ urlpatterns = [
 
     path('user/<id>/buddies/', views.user_buddy, name='user_buddies'),
     path('user/<id>/buddies/<buddy_id>', views.user_buddy, name='user_buddies'),
+
+    path('qrcode/<id>', views.qrcodes, name='qrcode'),
 ]

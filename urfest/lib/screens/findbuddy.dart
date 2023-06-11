@@ -1,7 +1,11 @@
 // python3 manage.py runserver 192.168.154.228:8000 ---> API RUN
-// TODO: marker for festival location
-// TODO: buddy location fetch and marker
-// TODO: Place correctly the buttons
+// TODO: null location buddy
+// TODO: bloc // offline
+// TODO: bluetooth
+// TODO: adicionar buddies pelo qrcode
+// TODO: button to accept or not qrcode friend request
+// TODO: Lineup
+// TODO: Login
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -93,7 +97,7 @@ class _MapState extends State<FindBuddyPage> {
 
   Future<LatLng> _retrieveLocationAPI(String endpoint) async {
     final response =
-        await http.get(Uri.parse('http://192.168.1.129:8000/$endpoint'));
+        await http.get(Uri.parse('http://192.168.43.168:8000/$endpoint'));
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
       Map<String, dynamic> json = jsonDecode(response.body);
@@ -109,7 +113,7 @@ class _MapState extends State<FindBuddyPage> {
 
   Future<List<String>> _retrieveBuddies() async {
     final response = await http.get(Uri.parse(
-        'http://192.168.1.129:8000/user/2/buddies?content=username'));
+        'http://192.168.43.168:8000/user/2/buddies?content=username'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
