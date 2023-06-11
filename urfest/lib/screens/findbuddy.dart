@@ -29,6 +29,8 @@ class _MapState extends State<FindBuddyPage> {
       const CameraPosition(target: LatLng(0, 0));
 
   List<String> _buddies = [];
+  List<String> _filteredBuddies = [];
+  bool _isListViewOpen = true;
 
   @override
   void initState() {
@@ -57,24 +59,7 @@ class _MapState extends State<FindBuddyPage> {
       );
     });
 
-    _retrieveLocationAPI("user/3/buddies/1").then((location) {
-      _buddyLocation = location;
-      _buddy = Marker(
-        markerId: const MarkerId('buddy'),
-        position: location,
-        infoWindow: const InfoWindow(title: 'Buddy'),
-        icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-      );
-    });
-
-    _retrieveBuddies().then((buddies) {
-      _buddies = buddies;
-
-      print("Buddies: ");
-      print(_buddies);
-      print(_buddies.where((item) => item.contains("us")).toList());
-      print(_buddies.where((item) => item.contains("bi")).toList());
-    });
+    _retrieveBuddies().then((buddies) => _buddies = buddies);
   }
 
   Future<LocationData?> _retrieveLocation() async {
@@ -108,7 +93,7 @@ class _MapState extends State<FindBuddyPage> {
 
   Future<LatLng> _retrieveLocationAPI(String endpoint) async {
     final response =
-        await http.get(Uri.parse('http://192.168.154.228:8000/$endpoint'));
+        await http.get(Uri.parse('http://192.168.1.129:8000/$endpoint'));
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
       Map<String, dynamic> json = jsonDecode(response.body);
@@ -124,7 +109,7 @@ class _MapState extends State<FindBuddyPage> {
 
   Future<List<String>> _retrieveBuddies() async {
     final response = await http.get(Uri.parse(
-        'http://192.168.154.228:8000/user/2/buddies?content=username'));
+        'http://192.168.1.129:8000/user/2/buddies?content=username'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
@@ -160,12 +145,64 @@ class _MapState extends State<FindBuddyPage> {
               decoration: InputDecoration(
                 hintText: 'Search for a buddy',
                 border: InputBorder.none,
+                suffixIcon: _isListViewOpen
+                ? IconButton(
+                    icon: const Icon(Icons.close),
+                    onPressed: () {
+                      setState(() {
+                        _isListViewOpen = false;
+                      });
+                    },
+                  )
+                : null,
               ),
               onChanged: (value) {
-                // show a list of buddies to choose from, based on what is being written
+                setState(() {
+                  _isListViewOpen = true;
+                  _filteredBuddies = _buddies
+                      .where((item) => item.contains(value))
+                      .toList();
+                });
               },
+              onTap: () => setState(() {
+                _isListViewOpen = true;
+              }),
             ),
           ),
+          if (_isListViewOpen)
+            ListView(
+                shrinkWrap: true,
+                padding: EdgeInsets.symmetric(horizontal: 16),
+                children: _filteredBuddies.map((buddy) {
+                  return ListTile(
+                    title: Text(buddy),
+                    onTap: () {
+                      setState(() {
+                        _isListViewOpen = false;
+                      });
+                      _retrieveLocationAPI("user/$buddy").then((value) {
+                        setState(() {
+                          _buddy = Marker(
+                            markerId: const MarkerId('buddy'),
+                            position: value,
+                            infoWindow: const InfoWindow(title: 'Buddy'),
+                            icon:
+                                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
+                                
+                          );
+                          _googleMapController?.animateCamera(
+                            CameraUpdate.newCameraPosition(CameraPosition(
+                              target: value,
+                              zoom: 10,
+                            )),
+                          );
+                          _buddyLocation = value;
+                        });
+                      });
+                    },
+                  );
+                }).toList(),
+              ),
           Container(
             color: Colors.white,
             padding: EdgeInsets.symmetric(vertical: 16),
@@ -180,7 +217,7 @@ class _MapState extends State<FindBuddyPage> {
                       _googleMapController?.animateCamera(
                         CameraUpdate.newCameraPosition(CameraPosition(
                           target: _festivalLocation,
-                          zoom: 11.5,
+                          zoom: 10,
                         )),
                       );
                     }
@@ -194,7 +231,7 @@ class _MapState extends State<FindBuddyPage> {
                       _googleMapController?.animateCamera(
                         CameraUpdate.newCameraPosition(CameraPosition(
                           target: _buddyLocation,
-                          zoom: 11.5,
+                          zoom: 10,
                         )),
                       );
                     }
@@ -209,7 +246,7 @@ class _MapState extends State<FindBuddyPage> {
                         CameraUpdate.newCameraPosition(CameraPosition(
                           target: LatLng(_locationData!.latitude!,
                               _locationData!.longitude!),
-                          zoom: 11.5,
+                          zoom: 10,
                         )),
                       );
                     }

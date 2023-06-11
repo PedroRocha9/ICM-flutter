@@ -15,12 +15,12 @@ def user(request, id=None):
     if request.method == "GET" or request.method == "PATCH" or request.method == "DELETE":
         if id is None:
             return Response({"message": "ID required"}, status=status.HTTP_400_BAD_REQUEST)
-        
-        if not id.isdigit():
-            return Response({"message": "ID must be a number"}, status=status.HTTP_400_BAD_REQUEST)
     
         try:
-            user = User.objects.get(id=id)
+            if id.isdigit():
+                user = User.objects.get(id=id)
+            else:
+                user = User.objects.get(username=id)
         except User.DoesNotExist:
             return Response({"message": "User not found"}, status=status.HTTP_404_NOT_FOUND)
         
