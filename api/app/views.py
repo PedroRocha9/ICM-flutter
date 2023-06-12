@@ -59,6 +59,11 @@ def user(request, id=None):
         user = User.objects.create(username=data["username"], password=data["password"])
         user.save()
 
+        qr_name = f'qrcodes/user_{user.id}.png'
+        path = f'{BASE_DIR}/static/{qr_name}'
+
+        _generate_qrcode(path, model_to_dict(user))
+
         return Response(model_to_dict(user), status=status.HTTP_201_CREATED)
 
 @api_view(["GET", "POST", "PATCH", "DELETE"]) 
@@ -216,7 +221,7 @@ def festival_lineup(request, id, day=None):
         data = json.loads(request.body)
 
         try:
-            festival = Festival.objects.get(id=data["festival"])
+            festival = Festival.objects.get(id=id)
         except Festival.DoesNotExist:
             return Response({"message": "Festival not found"}, status=status.HTTP_404_NOT_FOUND)
 
@@ -288,8 +293,6 @@ def user_buddy(request, id, buddy_id=None):
     if request.method == "DELETE":
         if buddy_id is None:
             return Response({"message": "Buddy ID required"}, status=status.HTTP_400_BAD_REQUEST)
-
-        data = json.loads(request.body)
 
         try:
             user_buddy = UserBuddy.objects.get(user=user, buddy=buddy_id)

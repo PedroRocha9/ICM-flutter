@@ -21,12 +21,27 @@ class _ProfilePageState extends State<ProfilePage> {
     fetchQRCode();
   }
 
+  Future<void> removeFriend(int buddyIDToEliminate) async {
+    final response = await http.delete(
+      Uri.parse('http://192.168.43.8:8000/user/2/buddies/$buddyIDToEliminate'),
+    );
+
+    if (response.statusCode == 200) {
+      setState(() {
+        friends
+            .removeWhere((friend) => friend == buddyIDToEliminate.toString());
+      });
+    } else {
+      print('Failed to remove the friend');
+    }
+  }
+
   Future<void> fetchFriends() async {
-    final response = await http.get(Uri.parse('http://192.168.43.168:8000/user/2/buddies?content=username'));
+    final response = await http.get(
+        Uri.parse('http://192.168.43.8:8000/user/2/buddies?content=username'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
-      print(data);
       final List<String> fetchedFriends = List<String>.from(data);
       setState(() {
         friends = fetchedFriends;
@@ -35,7 +50,8 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> fetchQRCode() async {
-    final response = await http.get(Uri.parse('http://192.168.43.168:8000/qrcode/3'));
+    final response =
+        await http.get(Uri.parse('http://192.168.43.8:8000/qrcode/3'));
     if (response.statusCode == 200) {
       setState(() {
         qrCodeImageData = response.bodyBytes;
@@ -49,7 +65,7 @@ class _ProfilePageState extends State<ProfilePage> {
       appBar: AppBar(
         title: Text('Profile Page'),
       ),
-      body: SingleChildScrollView( // Wrap the Column in SingleChildScrollView
+      body: SingleChildScrollView(
         child: Column(
           children: [
             Container(
@@ -75,10 +91,10 @@ class _ProfilePageState extends State<ProfilePage> {
             SizedBox(height: 8.0),
             Container(
               constraints: BoxConstraints(
-                maxHeight: 200.0,
+                maxHeight: 135.0,
               ),
               child: ListView.builder(
-                shrinkWrap: true, // Add shrinkWrap to enable scrolling within ListView
+                shrinkWrap: true,
                 itemCount: friends.length,
                 itemBuilder: (BuildContext context, int index) {
                   return ListTile(
@@ -87,18 +103,91 @@ class _ProfilePageState extends State<ProfilePage> {
                       child: Icon(Icons.person_2_outlined),
                     ),
                     title: Text(friends[index]),
-                    onTap: () {
-                      // Action when a friend is tapped
-                    },
+                    onTap: () {},
+                    trailing: IconButton(
+                      icon: Icon(Icons.close, color: Colors.red),
+                      onPressed: () {
+                        showDialog(
+                          context: context,
+                          builder: (BuildContext context) {
+                            return AlertDialog(
+                              title: Text('Remove Friend'),
+                              content: Text(
+                                  'Are you sure you want to remove this friend?'),
+                              actions: <Widget>[
+                                TextButton(
+                                  child: Text('Cancel'),
+                                  onPressed: () {
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                                TextButton(
+                                  child: Text('Remove'),
+                                  onPressed: () async {
+                                    String username = friends[index];
+                                    // Call the function to remove the friend
+                                    final response = await http.get(Uri.parse(
+                                        'http://192.168.43.8:8000/user/$username'));
+                                    if (response.statusCode == 200) {
+                                      // If the server returns a 200 OK response, then parse the JSON.
+                                      Map<String, dynamic> json =
+                                          jsonDecode(response.body);
+                                      await removeFriend(json['id']);
+
+                                      // remove list view item
+                                      setState(() {
+                                        friends.removeAt(index);
+                                      });
+                                    } else {
+                                      // If the server did not return a 200 OK response,
+                                      // then throw an exception.
+                                      throw Exception(
+                                          'Failed to load festival location');
+                                    }
+                                    // After removing the friend, dismiss the dialog
+                                    Navigator.of(context).pop();
+                                  },
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    ),
                   );
                 },
               ),
             ),
+            SizedBox(height: 10),
+            Container(
+              padding: EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.green,
+                borderRadius: BorderRadius.circular(10),
+              ),
+              child: Text(
+                'QR Code to let people add you',
+                style: TextStyle(
+                    fontSize: 16.0,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white),
+              ),
+            ),
+            SizedBox(height: 10),
             Center(
               child: qrCodeImageData != null
-                  ? Image.memory(qrCodeImageData!)
+                  ? Container(
+                      padding: EdgeInsets.all(8.0),
+                      child: Image.memory(
+                        qrCodeImageData!,
+                        width: 280, // set the width of the QR code here
+                        height: 280, // set the height of the QR code here
+                        fit: BoxFit.contain,
+                      ),
+                    )
                   : CircularProgressIndicator(),
             ),
+            SizedBox(height: 20),
           ],
         ),
       ),

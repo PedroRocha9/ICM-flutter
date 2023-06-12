@@ -22,8 +22,8 @@ class FestivalLineup(models.Model):
     festival = models.ForeignKey(Festival, on_delete=models.CASCADE)
     day = models.IntegerField()
     artist = models.CharField(max_length=100)
-    start_time = models.TimeField()
-    end_time = models.TimeField()
+    start_time = models.CharField(max_length=100)
+    end_time = models.CharField(max_length=100)
     stage = models.CharField(max_length=100)
 
 class UserBuddy(models.Model):

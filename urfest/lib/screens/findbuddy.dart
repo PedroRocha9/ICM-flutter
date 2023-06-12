@@ -1,11 +1,8 @@
 // python3 manage.py runserver 192.168.154.228:8000 ---> API RUN
 // TODO: null location buddy
-// TODO: bloc // offline
-// TODO: bluetooth
-// TODO: adicionar buddies pelo qrcode
-// TODO: button to accept or not qrcode friend request
+// TODO: bloc // offline or cache with Hive
 // TODO: Lineup
-// TODO: Login
+// TODO: Login and Register
 
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
@@ -25,6 +22,8 @@ class _MapState extends State<FindBuddyPage> {
   Marker _home = const Marker(markerId: MarkerId('home'));
   Marker _festival = const Marker(markerId: MarkerId('festival'));
   Marker _buddy = const Marker(markerId: MarkerId('buddy'));
+
+  bool _showBuddyMaker = false;
 
   LatLng _festivalLocation = const LatLng(0, 0);
   LatLng _buddyLocation = const LatLng(0, 0);
@@ -97,7 +96,7 @@ class _MapState extends State<FindBuddyPage> {
 
   Future<LatLng> _retrieveLocationAPI(String endpoint) async {
     final response =
-        await http.get(Uri.parse('http://192.168.43.168:8000/$endpoint'));
+        await http.get(Uri.parse('http://192.168.43.8:8000/$endpoint'));
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
       Map<String, dynamic> json = jsonDecode(response.body);
@@ -112,8 +111,8 @@ class _MapState extends State<FindBuddyPage> {
   }
 
   Future<List<String>> _retrieveBuddies() async {
-    final response = await http.get(Uri.parse(
-        'http://192.168.43.168:8000/user/2/buddies?content=username'));
+    final response = await http.get(
+        Uri.parse('http://192.168.43.8:8000/user/2/buddies?content=username'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
@@ -138,7 +137,7 @@ class _MapState extends State<FindBuddyPage> {
               markers: {
                 _home,
                 _festival,
-                _buddy,
+                if (_showBuddyMaker) _buddy,
               },
             ),
           ),
@@ -150,22 +149,21 @@ class _MapState extends State<FindBuddyPage> {
                 hintText: 'Search for a buddy',
                 border: InputBorder.none,
                 suffixIcon: _isListViewOpen
-                ? IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () {
-                      setState(() {
-                        _isListViewOpen = false;
-                      });
-                    },
-                  )
-                : null,
+                    ? IconButton(
+                        icon: const Icon(Icons.close),
+                        onPressed: () {
+                          setState(() {
+                            _isListViewOpen = false;
+                          });
+                        },
+                      )
+                    : null,
               ),
               onChanged: (value) {
                 setState(() {
                   _isListViewOpen = true;
-                  _filteredBuddies = _buddies
-                      .where((item) => item.contains(value))
-                      .toList();
+                  _filteredBuddies =
+                      _buddies.where((item) => item.contains(value)).toList();
                 });
               },
               onTap: () => setState(() {
@@ -175,38 +173,38 @@ class _MapState extends State<FindBuddyPage> {
           ),
           if (_isListViewOpen)
             ListView(
-                shrinkWrap: true,
-                padding: EdgeInsets.symmetric(horizontal: 16),
-                children: _filteredBuddies.map((buddy) {
-                  return ListTile(
-                    title: Text(buddy),
-                    onTap: () {
+              shrinkWrap: true,
+              padding: EdgeInsets.symmetric(horizontal: 16),
+              children: _filteredBuddies.map((buddy) {
+                return ListTile(
+                  title: Text(buddy),
+                  onTap: () {
+                    setState(() {
+                      _isListViewOpen = false;
+                    });
+                    _retrieveLocationAPI("user/$buddy").then((value) {
                       setState(() {
-                        _isListViewOpen = false;
+                        _buddy = Marker(
+                          markerId: const MarkerId('buddy'),
+                          position: value,
+                          infoWindow: const InfoWindow(title: 'Buddy'),
+                          icon: BitmapDescriptor.defaultMarkerWithHue(
+                              BitmapDescriptor.hueBlue),
+                        );
+                        _googleMapController?.animateCamera(
+                          CameraUpdate.newCameraPosition(CameraPosition(
+                            target: value,
+                            zoom: 10,
+                          )),
+                        );
+                        _buddyLocation = value;
+                        _showBuddyMaker = true;
                       });
-                      _retrieveLocationAPI("user/$buddy").then((value) {
-                        setState(() {
-                          _buddy = Marker(
-                            markerId: const MarkerId('buddy'),
-                            position: value,
-                            infoWindow: const InfoWindow(title: 'Buddy'),
-                            icon:
-                                BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueBlue),
-                                
-                          );
-                          _googleMapController?.animateCamera(
-                            CameraUpdate.newCameraPosition(CameraPosition(
-                              target: value,
-                              zoom: 10,
-                            )),
-                          );
-                          _buddyLocation = value;
-                        });
-                      });
-                    },
-                  );
-                }).toList(),
-              ),
+                    });
+                  },
+                );
+              }).toList(),
+            ),
           Container(
             color: Colors.white,
             padding: EdgeInsets.symmetric(vertical: 16),
