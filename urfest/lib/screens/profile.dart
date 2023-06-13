@@ -18,6 +18,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Box<String>? friendsBox;
   Box<Uint8List>? qrCodeBox;
 
+  int userId = 0;
+
   @override
   void initState() {
     super.initState();
@@ -28,6 +30,8 @@ class _ProfilePageState extends State<ProfilePage> {
   Future<void> initializeHiveAndOpenBoxes() async {
     await openHiveBoxes(); // Open the Hive boxes
     
+    await fetchUserFromCache();
+
     fetchFriendsFromCache();
     fetchQRCodeFromCache();
 
@@ -46,7 +50,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> removeFriend(int buddyIDToEliminate) async {
     final response = await http.delete(
-      Uri.parse('http://192.168.43.168:8000/user/2/buddies/$buddyIDToEliminate'),
+      Uri.parse('http://192.168.43.168:8000/user/$userId/buddies/$buddyIDToEliminate'),
     );
 
     if (response.statusCode == 200) {
@@ -59,9 +63,16 @@ class _ProfilePageState extends State<ProfilePage> {
     }
   }
 
+  Future<void> fetchUserFromCache() async {
+    final Box<int>? userBox = await Hive.openBox<int>('userBox');
+    if (userBox != null && userBox.isOpen) {
+      userId = userBox.get('userBox')!;
+    }
+  }
+
   Future<void> fetchFriends() async {
     final response = await http.get(
-        Uri.parse('http://192.168.43.168:8000/user/2/buddies?content=username'));
+        Uri.parse('http://192.168.43.168:8000/user/$userId/buddies?content=username'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
@@ -75,7 +86,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> fetchQRCode() async {
     final response =
-        await http.get(Uri.parse('http://192.168.43.168:8000/qrcode/3'));
+        await http.get(Uri.parse('http://192.168.43.168:8000/qrcode/$userId'));
     if (response.statusCode == 200) {
       final Uint8List imageData = response.bodyBytes;
       setState(() {

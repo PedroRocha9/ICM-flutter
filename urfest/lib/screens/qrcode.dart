@@ -3,6 +3,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:qr_code_scanner/qr_code_scanner.dart';
 import 'package:http/http.dart' as http;
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class QRCodePage extends StatefulWidget {
   const QRCodePage({Key? key}) : super(key: key);
@@ -12,11 +14,24 @@ class QRCodePage extends StatefulWidget {
 }
 
 class _QRCodePageState extends State<QRCodePage> {
+  int userId = 0;
+
   final GlobalKey _globalKey = GlobalKey(debugLabel: 'QR');
   QRViewController? controller;
   Barcode? barcode;
   bool showPrompt = false;
   Map<String, dynamic>? qrData;
+
+  @override
+  void initState() {
+    super.initState();
+
+    initializeHiveAndOpenBoxes();
+  }
+
+  Future<void> initializeHiveAndOpenBoxes() async {
+    await fetchUserFromCache();
+  }
 
   void qr(QRViewController controller) {
     this.controller = controller;
@@ -47,7 +62,7 @@ class _QRCodePageState extends State<QRCodePage> {
     // Add friend to list
     http
         .post(
-      Uri.parse('http://192.168.43.168:8000/user/2/buddies/'),
+      Uri.parse('http://192.168.43.168:8000/user/$userId/buddies/'),
       body: json.encode({
         'buddy': qrData!['id'],
       }),
@@ -87,6 +102,13 @@ class _QRCodePageState extends State<QRCodePage> {
     setState(() {
       showPrompt = false;
     });
+  }
+
+  Future<void> fetchUserFromCache() async {
+    final Box<int>? userBox = await Hive.openBox<int>('userBox');
+    if (userBox != null && userBox.isOpen) {
+      userId = userBox.get('userBox')!;
+    }
   }
 
   @override

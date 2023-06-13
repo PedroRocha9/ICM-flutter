@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:urfest/screens/findbuddy.dart';
-import 'package:urfest/screens/lineup.dart';
 import 'package:urfest/screens/profile.dart';
 import 'package:urfest/screens/qrcode.dart';
 

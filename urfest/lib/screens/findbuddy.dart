@@ -20,6 +20,8 @@ class FindBuddyPage extends StatefulWidget {
 }
 
 class _MapState extends State<FindBuddyPage> {
+  int userId = 0;
+
   GoogleMapController? _googleMapController;
   LocationData? _locationData;
 
@@ -50,6 +52,8 @@ class _MapState extends State<FindBuddyPage> {
 
   Future<void> initializeHiveAndOpenBoxes() async {
     await openHiveBoxes(); // Open the Hive boxes
+
+    await fetchUserFromCache();
 
     fetchHomeLocationFromCache();
     fetchFestivalLocationFromCache();
@@ -97,6 +101,13 @@ class _MapState extends State<FindBuddyPage> {
     await Hive.openBox<String>('festival').then((box) {
       _festivalLocationBox = box;
     });
+  }
+
+  Future<void> fetchUserFromCache() async {
+    final Box<int>? userBox = await Hive.openBox<int>('userBox');
+    if (userBox != null && userBox.isOpen) {
+      userId = userBox.get('userBox')!;
+    }
   }
 
   Future<void> fetchHomeLocationFromCache() async {
@@ -184,7 +195,7 @@ class _MapState extends State<FindBuddyPage> {
 
   Future<List<String>> _retrieveBuddies() async {
     final response = await http.get(
-        Uri.parse('http://192.168.43.168:8000/user/2/buddies?content=username'));
+        Uri.parse('http://192.168.43.168:8000/user/$userId/buddies?content=username'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);
