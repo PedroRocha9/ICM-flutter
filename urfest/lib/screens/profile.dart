@@ -30,13 +30,12 @@ class _ProfilePageState extends State<ProfilePage> {
     
     fetchFriendsFromCache();
     fetchQRCodeFromCache();
-    
+
     fetchFriends();
     fetchQRCode();
   }
 
   Future<void> openHiveBoxes() async {
-    await Hive.initFlutter();
     await Hive.openBox<String>('friends').then((box) {
       friendsBox = box;
     });
@@ -87,8 +86,11 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> fetchFriendsFromCache() async {
+    print("INSIDE FETCH FRIENDS FROM CACHE");
     if (friendsBox != null && friendsBox!.isOpen) {
       final String? cachedFriends = friendsBox!.get('friends');
+      print("CACHED FIRENDS");
+      print(cachedFriends);
       if (cachedFriends != null) {
         final List<dynamic> decodedFriends = jsonDecode(cachedFriends);
         final List<String> fetchedFriends =

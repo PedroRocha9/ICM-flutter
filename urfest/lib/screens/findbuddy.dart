@@ -31,8 +31,8 @@ class _MapState extends State<FindBuddyPage> {
   LatLng _homeLocation = const LatLng(0, 0);
   LatLng _festivalLocation = const LatLng(0, 0);
   LatLng _buddyLocation = const LatLng(0, 0);
-  Box<LatLng>? _homeLocationBox;
-  Box<LatLng>? _festivalLocationBox;
+  Box<String>? _homeLocationBox;
+  Box<String>? _festivalLocationBox;
 
   CameraPosition _initialCameraPosition =
       const CameraPosition(target: LatLng(0, 0));
@@ -69,12 +69,7 @@ class _MapState extends State<FindBuddyPage> {
 
       setState(() {
         _homeLocation = LatLng(location.latitude!, location.longitude!);
-        _homeLocationBox?.put('home', _homeLocation);
-        print("HOME LOCATION SAVED");
-
-        LatLng? h = _homeLocationBox!.get('home');
-        print(h?.latitude);
-        print(h?.longitude);
+        _homeLocationBox?.put('home', '${_homeLocation.latitude},${_homeLocation.longitude}');
       });
     });
 
@@ -88,33 +83,31 @@ class _MapState extends State<FindBuddyPage> {
       );
 
       setState(() {
-        _festivalLocationBox?.put('festival', _festivalLocation);
+        _festivalLocationBox?.put('festival', '${_festivalLocation.latitude},${_festivalLocation.longitude}');
       });
     });
 
     _retrieveBuddies().then((buddies) => _buddies = buddies);
   }
 
-    Future<void> openHiveBoxes() async {
-    await Hive.initFlutter();
-    await Hive.openBox<LatLng>('home').then((box) => {
-        _homeLocationBox = box,
+  Future<void> openHiveBoxes() async {
+    await Hive.openBox<String>('home').then((box) {
+      _homeLocationBox = box;
     });
-    await Hive.openBox<LatLng>('festival').then((box) => {
-        _festivalLocationBox = box,
+    await Hive.openBox<String>('festival').then((box) {
+      _festivalLocationBox = box;
     });
   }
 
   Future<void> fetchHomeLocationFromCache() async {
-    print("INSIDE FETCH HOME LOCATION");
     if (_homeLocationBox != null && _homeLocationBox!.isOpen) {
-      final LatLng? homeLocation = _homeLocationBox!.get('home');
-      print("HOME LOCATION");
-      print(homeLocation);
-      if (homeLocation != null) {
-        print("INSIDE IF");
+      final String? homeLocationString = _homeLocationBox!.get('home');
+      if (homeLocationString != null) {
+        final List<String> coordinates = homeLocationString.split(',');
+        final double lat = double.parse(coordinates[0]);
+        final double lng = double.parse(coordinates[1]);
         setState(() {
-          _homeLocation = homeLocation;
+          _homeLocation = LatLng(lat, lng);
           _home = Marker(
             markerId: const MarkerId('home'),
             position: _homeLocation,
@@ -128,10 +121,13 @@ class _MapState extends State<FindBuddyPage> {
 
   Future<void> fetchFestivalLocationFromCache() async {
     if (_festivalLocationBox != null && _festivalLocationBox!.isOpen) {
-      final festivalLocation = _festivalLocationBox!.get('festival');
-      if (festivalLocation != null) {
+      final String? festivalLocationString = _festivalLocationBox!.get('festival');
+      if (festivalLocationString != null) {
+        final List<String> coordinates = festivalLocationString.split(',');
+        final double lat = double.parse(coordinates[0]);
+        final double lng = double.parse(coordinates[1]);
         setState(() {
-          _festivalLocation = festivalLocation;
+          _festivalLocation = LatLng(lat, lng);
           _festival = Marker(
             markerId: const MarkerId('festival'),
             position: _festivalLocation,
@@ -166,7 +162,6 @@ class _MapState extends State<FindBuddyPage> {
     }
 
     _locationData = await location.getLocation();
-    _homeLocation = LatLng(_locationData!.latitude!, _locationData!.longitude!);
     
     return _locationData;
   }
