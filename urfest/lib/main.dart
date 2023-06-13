@@ -90,7 +90,7 @@ class _LoginPageState extends State<LoginPage> {
   _saveUsername(BuildContext context) async {
     String username = _usernameController.text;
 
-    http.get(Uri.parse("http://192.168.43.168:8000/user/user5")).then((body) async {
+    http.get(Uri.parse("http://192.168.43.168:8000/user/$username")).then((body) async {
       // check code status
       if (body.statusCode == 200) {
         // get response body
