@@ -15,7 +15,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       yield ProfileLoading();
       try {
         final response = await http.get(Uri.parse(
-            'http://192.168.43.8:8000/user/2/buddies?content=username'));
+            'http://192.168.43.168:8000/user/2/buddies?content=username'));
         if (response.statusCode == 200) {
           final data = jsonDecode(response.body);
           final List<String> friends = List<String>.from(data);
@@ -30,7 +30,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
       yield ProfileLoading();
       try {
         final response =
-            await http.get(Uri.parse('http://192.168.43.8:8000/qrcode/3'));
+            await http.get(Uri.parse('http://192.168.43.168:8000/qrcode/3'));
         if (response.statusCode == 200) {
           yield QRCodeLoaded(response.bodyBytes);
         } else {
@@ -42,7 +42,7 @@ class ProfileBloc extends Bloc<ProfileEvent, ProfileState> {
     } else if (event is RemoveFriend) {
       try {
         final response = await http.delete(
-          Uri.parse('http://192.168.43.8:8000/user/2/buddies/${event.buddyId}'),
+          Uri.parse('http://192.168.43.168:8000/user/2/buddies/${event.buddyId}'),
         );
         if (response.statusCode != 200) {
           yield ProfileError("Failed to remove friend");

@@ -4,11 +4,15 @@
 // TODO: Lineup
 // TODO: Login and Register
 
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:location/location.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class FindBuddyPage extends StatefulWidget {
   @override
@@ -22,11 +26,13 @@ class _MapState extends State<FindBuddyPage> {
   Marker _home = const Marker(markerId: MarkerId('home'));
   Marker _festival = const Marker(markerId: MarkerId('festival'));
   Marker _buddy = const Marker(markerId: MarkerId('buddy'));
-
   bool _showBuddyMaker = false;
 
+  LatLng _homeLocation = const LatLng(0, 0);
   LatLng _festivalLocation = const LatLng(0, 0);
   LatLng _buddyLocation = const LatLng(0, 0);
+  Box<LatLng>? _homeLocationBox;
+  Box<LatLng>? _festivalLocationBox;
 
   CameraPosition _initialCameraPosition =
       const CameraPosition(target: LatLng(0, 0));
@@ -38,6 +44,16 @@ class _MapState extends State<FindBuddyPage> {
   @override
   void initState() {
     super.initState();
+
+    initializeHiveAndOpenBoxes();
+  }
+
+  Future<void> initializeHiveAndOpenBoxes() async {
+    await openHiveBoxes(); // Open the Hive boxes
+
+    fetchHomeLocationFromCache();
+    fetchFestivalLocationFromCache();
+
     _retrieveLocation().then((location) {
       _home = Marker(
         markerId: const MarkerId('home'),
@@ -50,6 +66,16 @@ class _MapState extends State<FindBuddyPage> {
         target: LatLng(location.latitude!, location.longitude!),
         zoom: 11.5,
       );
+
+      setState(() {
+        _homeLocation = LatLng(location.latitude!, location.longitude!);
+        _homeLocationBox?.put('home', _homeLocation);
+        print("HOME LOCATION SAVED");
+
+        LatLng? h = _homeLocationBox!.get('home');
+        print(h?.latitude);
+        print(h?.longitude);
+      });
     });
 
     _retrieveLocationAPI("festival/1").then((location) {
@@ -60,9 +86,61 @@ class _MapState extends State<FindBuddyPage> {
         infoWindow: const InfoWindow(title: 'Festival'),
         icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
       );
+
+      setState(() {
+        _festivalLocationBox?.put('festival', _festivalLocation);
+      });
     });
 
     _retrieveBuddies().then((buddies) => _buddies = buddies);
+  }
+
+    Future<void> openHiveBoxes() async {
+    await Hive.initFlutter();
+    await Hive.openBox<LatLng>('home').then((box) => {
+        _homeLocationBox = box,
+    });
+    await Hive.openBox<LatLng>('festival').then((box) => {
+        _festivalLocationBox = box,
+    });
+  }
+
+  Future<void> fetchHomeLocationFromCache() async {
+    print("INSIDE FETCH HOME LOCATION");
+    if (_homeLocationBox != null && _homeLocationBox!.isOpen) {
+      final LatLng? homeLocation = _homeLocationBox!.get('home');
+      print("HOME LOCATION");
+      print(homeLocation);
+      if (homeLocation != null) {
+        print("INSIDE IF");
+        setState(() {
+          _homeLocation = homeLocation;
+          _home = Marker(
+            markerId: const MarkerId('home'),
+            position: _homeLocation,
+            infoWindow: const InfoWindow(title: 'Home'),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueRed),
+          );
+        });
+      }
+    }
+  }
+
+  Future<void> fetchFestivalLocationFromCache() async {
+    if (_festivalLocationBox != null && _festivalLocationBox!.isOpen) {
+      final festivalLocation = _festivalLocationBox!.get('festival');
+      if (festivalLocation != null) {
+        setState(() {
+          _festivalLocation = festivalLocation;
+          _festival = Marker(
+            markerId: const MarkerId('festival'),
+            position: _festivalLocation,
+            infoWindow: const InfoWindow(title: 'Festival'),
+            icon: BitmapDescriptor.defaultMarkerWithHue(BitmapDescriptor.hueGreen),
+          );
+        });
+      }
+    }
   }
 
   Future<LocationData?> _retrieveLocation() async {
@@ -88,15 +166,14 @@ class _MapState extends State<FindBuddyPage> {
     }
 
     _locationData = await location.getLocation();
-
-    setState(() {}); // Call setState to trigger a rebuild of the widget.
-
+    _homeLocation = LatLng(_locationData!.latitude!, _locationData!.longitude!);
+    
     return _locationData;
   }
 
   Future<LatLng> _retrieveLocationAPI(String endpoint) async {
     final response =
-        await http.get(Uri.parse('http://192.168.43.8:8000/$endpoint'));
+        await http.get(Uri.parse('http://192.168.43.168:8000/$endpoint'));
     if (response.statusCode == 200) {
       // If the server returns a 200 OK response, then parse the JSON.
       Map<String, dynamic> json = jsonDecode(response.body);
@@ -112,7 +189,7 @@ class _MapState extends State<FindBuddyPage> {
 
   Future<List<String>> _retrieveBuddies() async {
     final response = await http.get(
-        Uri.parse('http://192.168.43.8:8000/user/2/buddies?content=username'));
+        Uri.parse('http://192.168.43.168:8000/user/2/buddies?content=username'));
 
     if (response.statusCode == 200) {
       List<dynamic> data = jsonDecode(response.body);

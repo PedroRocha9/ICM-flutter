@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({Key? key}) : super(key: key);
@@ -13,17 +15,39 @@ class ProfilePage extends StatefulWidget {
 class _ProfilePageState extends State<ProfilePage> {
   List<String> friends = [];
   Uint8List? qrCodeImageData;
+  Box<String>? friendsBox;
+  Box<Uint8List>? qrCodeBox;
 
   @override
   void initState() {
     super.initState();
-    fetchFriends(); // Fetch friends when the page is loaded
+
+    initializeHiveAndOpenBoxes();
+  }
+
+  Future<void> initializeHiveAndOpenBoxes() async {
+    await openHiveBoxes(); // Open the Hive boxes
+    
+    fetchFriendsFromCache();
+    fetchQRCodeFromCache();
+    
+    fetchFriends();
     fetchQRCode();
+  }
+
+  Future<void> openHiveBoxes() async {
+    await Hive.initFlutter();
+    await Hive.openBox<String>('friends').then((box) {
+      friendsBox = box;
+    });
+    await Hive.openBox<Uint8List>('qrcode').then((box) {
+      qrCodeBox = box;
+    });
   }
 
   Future<void> removeFriend(int buddyIDToEliminate) async {
     final response = await http.delete(
-      Uri.parse('http://192.168.43.8:8000/user/2/buddies/$buddyIDToEliminate'),
+      Uri.parse('http://192.168.43.168:8000/user/2/buddies/$buddyIDToEliminate'),
     );
 
     if (response.statusCode == 200) {
@@ -38,24 +62,52 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Future<void> fetchFriends() async {
     final response = await http.get(
-        Uri.parse('http://192.168.43.8:8000/user/2/buddies?content=username'));
+        Uri.parse('http://192.168.43.168:8000/user/2/buddies?content=username'));
 
     if (response.statusCode == 200) {
       final data = jsonDecode(response.body);
       final List<String> fetchedFriends = List<String>.from(data);
       setState(() {
         friends = fetchedFriends;
+        friendsBox?.put('friends', jsonEncode(fetchedFriends));
       });
     }
   }
 
   Future<void> fetchQRCode() async {
     final response =
-        await http.get(Uri.parse('http://192.168.43.8:8000/qrcode/3'));
+        await http.get(Uri.parse('http://192.168.43.168:8000/qrcode/3'));
     if (response.statusCode == 200) {
+      final Uint8List imageData = response.bodyBytes;
       setState(() {
-        qrCodeImageData = response.bodyBytes;
+        qrCodeImageData = imageData;
+        qrCodeBox?.put('qrcode', imageData);
       });
+    }
+  }
+
+  Future<void> fetchFriendsFromCache() async {
+    if (friendsBox != null && friendsBox!.isOpen) {
+      final String? cachedFriends = friendsBox!.get('friends');
+      if (cachedFriends != null) {
+        final List<dynamic> decodedFriends = jsonDecode(cachedFriends);
+        final List<String> fetchedFriends =
+            decodedFriends.map((friend) => friend.toString()).toList();
+        setState(() {
+          friends = fetchedFriends;
+        });
+      }
+    }
+  }
+
+  Future<void> fetchQRCodeFromCache() async {
+    if (qrCodeBox != null && qrCodeBox!.isOpen) {
+      final Uint8List? cachedQRCode = qrCodeBox!.get('qrcode');
+      if (cachedQRCode != null) {
+        setState(() {
+          qrCodeImageData = cachedQRCode;
+        });
+      }
     }
   }
 
@@ -127,7 +179,7 @@ class _ProfilePageState extends State<ProfilePage> {
                                     String username = friends[index];
                                     // Call the function to remove the friend
                                     final response = await http.get(Uri.parse(
-                                        'http://192.168.43.8:8000/user/$username'));
+                                        'http://192.168.43.168:8000/user/$username'));
                                     if (response.statusCode == 200) {
                                       // If the server returns a 200 OK response, then parse the JSON.
                                       Map<String, dynamic> json =

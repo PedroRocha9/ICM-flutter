@@ -18,7 +18,7 @@ class _LineUpPageState extends State<LineUpPage> {
 
   Future<void> fetchLineups() async {
     final response = await http
-        .get(Uri.parse('http://192.168.43.8:8000/festival/1/lineup/'));
+        .get(Uri.parse('http://192.168.43.168:8000/festival/1/lineup/'));
 
     if (response.statusCode == 200) {
       setState(() {

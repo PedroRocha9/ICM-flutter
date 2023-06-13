@@ -26,7 +26,7 @@ void main() {
 }
 
 void sendLocationToAPI(LocationData locationData) {
-  http.patch(Uri.parse('http://192.168.43.8:8000/user/2'),
+  http.patch(Uri.parse('http://192.168.43.168:8000/user/2'),
       body: json.encode({
         'lat': locationData.latitude,
         'lon': locationData.longitude,

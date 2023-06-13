@@ -47,7 +47,7 @@ class _QRCodePageState extends State<QRCodePage> {
     // Add friend to list
     http
         .post(
-      Uri.parse('http://192.168.43.8:8000/user/2/buddies/'),
+      Uri.parse('http://192.168.43.168:8000/user/2/buddies/'),
       body: json.encode({
         'buddy': qrData!['id'],
       }),
